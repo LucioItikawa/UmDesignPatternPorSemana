@@ -10,19 +10,39 @@ namespace Evitando.Duplicacao.de.Codigo.Exercicios
     // Exercicio 4: Precisamos verificar se o cpf ou cnpj informado é
     // o mesmo que esta salvo no banco para 3 entidades diferentes
 
-    public class SamBeneficiario : Entidade<SamBeneficiario>
+    public interface DadosDocumento
+    {
+        string ObterCpfCnpj();
+    }
+
+    public class SamBeneficiario : Entidade<SamBeneficiario>, DadosDocumento
     {
         public string Cpf { get; set; }
+
+        public string ObterCpfCnpj()
+        {
+            return Cpf;
+        }
     }
 
-    public class SamPrestador : Entidade<SamPrestador>
+    public class SamPrestador : Entidade<SamPrestador>, DadosDocumento
     {
         public string Cnpj { get; set; }
+
+        public string ObterCpfCnpj()
+        {
+            return Cnpj;
+        }
     }
 
-    public class SamContratante : Entidade<SamContratante>
+    public class SamContratante : Entidade<SamContratante>, DadosDocumento
     {
         public string CnpjOuCpf { get; set; }
+
+        public string ObterCpfCnpj()
+        {
+            return CnpjOuCpf;
+        }
     }
 
     public class ValidacaoDto
