@@ -31,7 +31,7 @@ namespace Evitando.Duplicacao.de.Codigo.Exercicios
         public string Beneficiario { get; set; }
     }
 
-    public class WebAutoriz : Entidade<SamAutoriz>, IDadosGuia
+    public class WebAutoriz : Entidade<WebAutoriz>, IDadosGuia
     {
         public string NumeroGuia { get; set; }
         public string ProfissionalExecutante { get; set; }

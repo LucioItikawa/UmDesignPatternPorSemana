@@ -1,31 +1,27 @@
-﻿using Evitando.Duplicacao.de.Codigo.OO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Evitando.Duplicacao.de.Codigo.Generics._2.ComGenerics;
+using Evitando.Duplicacao.de.Codigo.OO;
 
 namespace Evitando.Duplicacao.de.Codigo.Exercicios
 {
     // Exercicio 4: Precisamos verificar se o cpf ou cnpj informado é
     // o mesmo que esta salvo no banco para 3 entidades diferentes
 
-    public interface DadosDocumento
+    public interface IDadosDocumento
     {
         string ObterCpfCnpj();
     }
 
-    public class SamBeneficiario : Entidade<SamBeneficiario>, DadosDocumento
+    public class SamBeneficiario : Entidade<SamBeneficiario>, IDadosDocumento
     {
         public string Cpf { get; set; }
-
+        
         public string ObterCpfCnpj()
         {
             return Cpf;
         }
     }
 
-    public class SamPrestador : Entidade<SamPrestador>, DadosDocumento
+    public class SamPrestador : Entidade<SamPrestador>, IDadosDocumento
     {
         public string Cnpj { get; set; }
 
@@ -35,7 +31,7 @@ namespace Evitando.Duplicacao.de.Codigo.Exercicios
         }
     }
 
-    public class SamContratante : Entidade<SamContratante>, DadosDocumento
+    public class SamContratante : Entidade<SamContratante>, IDadosDocumento
     {
         public string CnpjOuCpf { get; set; }
 
@@ -51,48 +47,52 @@ namespace Evitando.Duplicacao.de.Codigo.Exercicios
         public string Mensagem { get; set; }
     }
 
+    public class ValidacaoDocumento<TDAO> where TDAO : IDAO<IDadosDocumento>
+    {
+        private TDAO _daoBase;
+
+        public ValidacaoDocumento(TDAO daoBase)
+        {
+            _daoBase = daoBase;
+        }
+
+        public ValidacaoDto Validar(string documentoInformado, string nomeCampo)
+        {
+            var criteria = new Criteria(string.Format("WHERE {0} = :{0}", nomeCampo.ToUpperInvariant()), documentoInformado);
+            var cpfCadastrado = _daoBase.GetFirstOrDefault(criteria).ObterCpfCnpj();
+            if (string.IsNullOrEmpty(cpfCadastrado))
+                return new ValidacaoDto { Resultado = false, Mensagem = string.Format("Não foi encontrado {0} em seu cadastro", nomeCampo.Replace("_", "/").ToLowerInvariant()) };
+
+            if (cpfCadastrado != documentoInformado)
+                return new ValidacaoDto { Resultado = false, Mensagem = string.Format("O {0} informado é diferente", nomeCampo.Replace("_", "/").ToLowerInvariant()) };
+
+            return new ValidacaoDto { Resultado = true, Mensagem = "Sem erro!" };
+        }
+    }
+
     public class ValidacaoCadastro
     {
         public ValidacaoDto ValidarCpfBeneficiario(string cpfInformado)
         {
-            var criteria = new Criteria("WHERE CPF = :CPF", cpfInformado);
-            var cpfCadastrado = SamBeneficiario.GetFirstOrDefault(criteria).Cpf;
-
-            if (string.IsNullOrEmpty(cpfCadastrado))
-                return new ValidacaoDto { Mensagem = "Não foi encontrado cpf em seu cadastro" };
-
-            if (cpfCadastrado != cpfInformado)
-                return new ValidacaoDto { Mensagem = "O cpf informado é diferente" };
-
-            return new ValidacaoDto { Resultado = true, Mensagem = "Sucesso!" };
+            var validacaoDocumento = ObterValidadorDocumentos<SamBeneficiario>();
+            return validacaoDocumento.Validar(cpfInformado, "CPF");
         }
 
         public ValidacaoDto ValidarCnpjPrestador(string cnpjInformado)
         {
-            var criteria = new Criteria("WHERE CNPJ = :CNPJ", cnpjInformado);
-            var cnpjCadastrado = SamPrestador.GetFirstOrDefault(criteria).Cnpj;
-
-            if (string.IsNullOrEmpty(cnpjCadastrado))
-                return new ValidacaoDto { Mensagem = "Não foi encontrado cnpj em seu cadastro" };
-
-            if (cnpjCadastrado != cnpjInformado)
-                return new ValidacaoDto { Mensagem = "O cnpj informado é diferente" };
-
-            return new ValidacaoDto { Resultado = true, Mensagem = "Sucesso!" };
+            var validacaoDocumento = ObterValidadorDocumentos<SamPrestador>();
+            return validacaoDocumento.Validar(cnpjInformado, "CNPJ");
         }
 
         public ValidacaoDto ValidarCpfCnpjPrestador(string informado)
         {
-            var criteria = new Criteria("WHERE CPF_CNPJ = :CPF_CNPJ", informado);
-            var cadastrado = SamContratante.GetFirstOrDefault(criteria).CnpjOuCpf;
+            var validacaoDocumento = ObterValidadorDocumentos<SamContratante>();
+            return validacaoDocumento.Validar(informado, "CPF_CNPJ");
+        }
 
-            if (string.IsNullOrEmpty(cadastrado))
-                return new ValidacaoDto { Mensagem = "Não foi encontrado cpf/cnpj em seu cadastro" };
-
-            if (cadastrado != informado)
-                return new ValidacaoDto { Mensagem = "O cpf/cnpj informado é diferente" };
-
-            return new ValidacaoDto { Resultado = true, Mensagem = "Sucesso!" };
+        private ValidacaoDocumento<DaoGenerico<TEntidade, IDadosDocumento>> ObterValidadorDocumentos<TEntidade>() where TEntidade : Entidade<TEntidade>, IDadosDocumento
+        {
+            return new ValidacaoDocumento<DaoGenerico<TEntidade, IDadosDocumento>>(new DaoGenerico<TEntidade, IDadosDocumento>());
         }
     }
 }
