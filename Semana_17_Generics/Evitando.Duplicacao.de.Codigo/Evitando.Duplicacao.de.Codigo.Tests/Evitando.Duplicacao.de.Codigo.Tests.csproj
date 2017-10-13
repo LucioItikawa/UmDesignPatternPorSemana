@@ -81,7 +81,9 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Exercicios\ConsultaServicoAutorizacaoTests.cs" />
     <Compile Include="Exercicios\InformacoesContatoTest.cs" />
+    <Compile Include="Exercicios\ValidacaoDocumentoTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
